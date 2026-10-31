@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>러비의 iPhone</title><meta name="claude:viewport-fit-sides" content="cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"><style id="css">/* Layout: one handset centred on a quiet desk-coloured ground, owner tools in a side sheet. */
+<title>@@의 iPhone</title><meta name="claude:viewport-fit-sides" content="cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"><style id="css">/* Layout: one handset centred on a quiet desk-coloured ground, owner tools in a side sheet. */
 :root{
   --bg:#e7e3dc; --ink:#1c1b19; --sub:#77726a; --chip:rgba(28,27,25,.07); --line:rgba(28,27,25,.12); --accent:#2d6cf0; --panel:#f7f5f1; --danger:#d93a2f;
   --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Apple SD Gothic Neo","Inter","Noto Sans KR",sans-serif;
@@ -1840,15 +1840,19 @@ ACT.kkRoom=(t,e,win)=>{
     '<div class="sc msgs" id="kkMsgs"></div>'+
     '<form class="chat-in" data-id="'+esc(r.id)+'"><button type="button" class="plus" aria-label="추가">'+I.plus+'</button><div class="box"><input id="kkIn" autocomplete="off" placeholder="메시지 입력" enterkeyhint="send"><button type="submit" class="send" aria-label="전송">'+I.send+'</button></div></form>',{cls:'chat',sb:'dark'});
   v.dataset.room=r.id;
-  kkDrawMsgs(v,r);
+  kkDrawMsgs(v,r,true);
   const f=$('form',v),inp=$('#kkIn',v),sb=$('.send',v);
   inp.oninput=()=>sb.classList.toggle('on',!!inp.value.trim());
   f.onsubmit=ev=>{ev.preventDefault();const tx=inp.value.trim();if(!tx)return;inp.value='';sb.classList.remove('on');kkSend(r,tx)};
 };
 ACT.kkBack=(t,e,win)=>{pop(win);setTimeout(()=>{if(CUR&&CUR.win===win&&win._tab==='chat'){const sc=$('.kk-list',win);const y=sc?sc.scrollTop:0;kkMain(win);const s2=$('.kk-list',win);if(s2)s2.scrollTop=y}},320)};
 const KK_GROUP_MIN=10;
-function kkDrawMsgs(v,r){
+function kkDrawMsgs(v,r,force){
   const box=$('#kkMsgs',v); if(!box) return; const items=roomItems(r); let html='<div class="spacer"></div>';
+  const toEnd=()=>{box._prog=Date.now();box.scrollTop=box.scrollHeight};
+  if(!box._kk){box._kk=1;v._stick=true;box.addEventListener('scroll',()=>{if(Date.now()-(box._prog||0)<700)return;v._stick=box.scrollHeight-box.scrollTop-box.clientHeight<60});
+    box.addEventListener('load',()=>{if(v._stick)toEnd()},true)}   // 사진이 늦게 뜨면서 화면이 중간에 멈추지 않게
+  const prevTop=box.scrollTop, stick=force||v._stick!==false;
   for(let i=0;i<items.length;i++){
     const m=items[i]; if(m.t==='d'){html+='<div class="dchip">'+esc(m.text)+'</div>';continue}
     const p=items[i-1],n=items[i+1];
@@ -1861,7 +1865,7 @@ function kkDrawMsgs(v,r){
     if(m.me) html+='<div class="ml me'+(first?' first':'')+'"><div class="col"><div class="brow">'+bub+meta+'</div></div></div>';
     else html+='<div class="ml'+(first?' first':'')+'"><div class="avs">'+(first?av(r.group?avatarByName(m.who):r.avatar,40,true):'')+'</div><div class="col">'+(first?'<div class="who">'+esc(m.who)+'</div>':'')+'<div class="brow">'+bub+meta+'</div></div></div>';
   }
-  box.innerHTML=html; box.scrollTop=box.scrollHeight;
+  box.innerHTML=html; if(stick){v._stick=true;toEnd();[60,250,600,1200].forEach(t=>setTimeout(()=>{if(v._stick)toEnd()},t))}else box.scrollTop=prevTop;   // 위로 올려 보는 중이면 그대로
 }
 function openKkRoom(id){
   const go=()=>{if(CUR&&CUR.id==='kakao')ACT.kkRoom({dataset:{id}},null,CUR.win)};
@@ -1871,7 +1875,7 @@ function openImThread(i){
   const go=()=>{if(CUR&&CUR.id==='messages')ACT.imOpen({dataset:{i}},null,CUR.win)};
   if(CUR&&CUR.id==='messages') go(); else { openApp('messages'); setTimeout(go,450) }
 }
-function kkRedraw(rid){ if(!CUR||CUR.id!=='kakao') return; const v=topView(CUR.win); if(v&&v.dataset.room===rid) kkDrawMsgs(v,roomById(rid)); }
+function kkRedraw(rid,force){ if(!CUR||CUR.id!=='kakao') return; const v=topView(CUR.win); if(v&&v.dataset.room===rid) kkDrawMsgs(v,roomById(rid),force); }
 function dayChip(d){return korFullDate(d)}
 function kkSend(r,text){
   const d=now(); (L.kk[r.id]=L.kk[r.id]||[]).push({who:'나',me:true,time:hm(d).padStart(5,'0'),text,unread:!r.group,day:dayChip(d)});
@@ -1879,7 +1883,7 @@ function kkSend(r,text){
     if((s.lastHer||0)>(s.lastMe||0)) s.gap=n-s.lastHer;           // 승완이 말에 얼마나 늦게 답했는지
     if(!s.pend){ s.pend=1; s.firstAt=n; s.readAt=n+readDelayMs(r) } // 처음 안 읽은 말이 생긴 순간 언제 볼지 정해 둠
     s.lastMe=n; if(s.pro){if(s.pro.un)s.back=1;s.pro.nudged=0;s.pro.un=0}
-    saveL(); kkRedraw(r.id); kkSchedule(r);
+    saveL(); kkRedraw(r.id,true); kkSchedule(r);
   } else { saveL(); kkRedraw(r.id) }
 }
 const AI_STATE={busy:{},t:{}};
@@ -2842,7 +2846,7 @@ function setMain(win){
 }
 ACT.setAir=(t,e,win)=>{SYS.air=!SYS.air;renderSB();setMain(win)};
 ACT.setName=(t,e,win)=>{const m=ME();const ist='flex:1;border:0;background:none;outline:0;font-size:17px;min-width:0;color:var(--sfg);text-align:right';
-  push(win,NB('이름')+'<div class="sc" style="padding:110px 0 40px;background:var(--grp)"><div class="grp-h">이 iPhone 주인의 이름</div><div class="grp"><label class="row" style="--sepl:16px" for="snLast"><div class="rt" style="flex:none">성</div><input id="snLast" maxlength="4" autocomplete="off" value="'+esc(m.last)+'" style="'+ist+'"></label><label class="row" for="snFirst"><div class="rt" style="flex:none">이름</div><input id="snFirst" maxlength="10" autocomplete="off" value="'+esc(m.first)+'" style="'+ist+'"></label></div><p style="margin:0;padding:8px 32px 16px;font-size:13px;color:var(--sec);line-height:1.45">카톡 친구들이 평소에는 이름으로, 가끔은 성까지 붙여서 불러요.</p><div style="padding:0 16px"><button data-a="setNameSave" style="width:100%;height:50px;border-radius:14px;background:var(--tint);color:#fff;font-size:17px;font-weight:600">저장</button></div></div>')};
+  push(win,NB('이름')+'<div class="sc" style="padding:110px 0 40px;background:var(--grp)"><div class="grp-h">이 iPhone 주인의 이름</div><div class="grp"><label class="row" style="--sepl:16px" for="snLast"><div class="rt" style="flex:none">성</div><input id="snLast" maxlength="4" autocomplete="off" value="'+esc(m.last)+'" style="'+ist+'"></label><label class="row" for="snFirst"><div class="rt" style="flex:none">이름</div><input id="snFirst" maxlength="10" autocomplete="off" value="'+esc(m.first)+'" style="'+ist+'"></label></div><p style="margin:0;padding:8px 32px 16px;font-size:13px;color:var(--sec);line-height:1.45">입력한 이름은 사이트에 저장되지 않아요.</p><div style="padding:0 16px"><button data-a="setNameSave" style="width:100%;height:50px;border-radius:14px;background:var(--tint);color:#fff;font-size:17px;font-weight:600">저장</button></div></div>')};
 ACT.setNameSave=(t,e,win)=>{const v=topView(win);const a=$('#snLast',v).value.trim(),b=$('#snFirst',v).value.trim();if(!b){$('#snFirst',v).focus();return}
   L.player={last:a,first:b};L.named=1;saveL();pop(win);setTimeout(()=>{repick();applyNames()},320)};
 ACT.setDisp=(t,e,win)=>{const v=push(win,NB('디스플레이 및 밝기')+'<div class="sc" style="padding:110px 0 40px;background:var(--grp)"><div class="grp-h">모양</div><div class="grp" style="display:flex;justify-content:space-around;padding:18px 0">'+[['라이트',false],['다크',true]].map(m=>'<div data-a="setDark" data-d="'+(m[1]?1:0)+'" style="text-align:center;cursor:pointer"><div style="width:72px;height:140px;border-radius:14px;background:'+(m[1]?'#1c1c1e':'#f2f2f7')+';border:1px solid var(--sep);margin-bottom:8px"></div>'+m[0]+'<div style="margin:8px auto 0;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ter);display:grid;place-items:center">'+(SYS.dark===m[1]?'<i style="width:22px;height:22px;border-radius:50%;background:var(--tint);display:grid;place-items:center;color:#fff">'+'</i>':'')+'</div></div>').join('')+'</div></div>')};
@@ -2954,7 +2958,7 @@ function buildDoc(B0,extra){B0=B0||BASE;
   for(const k in MEDIA){ if(st.includes(MEDIA[k].url)){ st=st.split(MEDIA[k].url).join('/_blob/'+k); med[k]=MEDIA[k].data } }
   Object.assign(med,extra||{}); st=st.replace(/</g,'\\u003c');
   const mtag=Object.keys(med).length?'<script id="media" type="application/json">'+JSON.stringify(med).replace(/</g,'\\u003c')+'<\/script>':'';
-  return SKEL+'<title>'+esc(B0.fixedPlayer?deviceName(splitName(B0.fixedPlayer)):deviceName(B0.owner))+'</title>'+HEADX+'<style id="css">'+css+'</style><div id="root"></div><script id="state" type="application/json">'+st+'<\/script>'+mtag+($('#tamaSrc')?'<script id="tamaSrc" type="application/json">'+$('#tamaSrc').textContent+'<\/script>':'')+'<script id="main">'+js+'<\/script></body></html>';
+  return SKEL+'<title>'+esc(B0.fixedPlayer?deviceName(splitName(B0.fixedPlayer)):'@@의 iPhone')+'</title>'+HEADX+'<style id="css">'+css+'</style><div id="root"></div><script id="state" type="application/json">'+st+'<\/script>'+mtag+($('#tamaSrc')?'<script id="tamaSrc" type="application/json">'+$('#tamaSrc').textContent+'<\/script>':'')+'<script id="main">'+js+'<\/script></body></html>';
 }
 function getP(p){return p.split('.').reduce((o,k)=>o==null?o:o[k],S)}
 function setP(p,v){const ks=p.split('.');let o=S;for(let i=0;i<ks.length-1;i++){if(o[ks[i]]==null)o[ks[i]]=/^\d+$/.test(ks[i+1])?[]:{};o=o[ks[i]]}o[ks[ks.length-1]]=v}
@@ -3083,7 +3087,7 @@ function livePreview(){
 /* redraw everything that shows the owner's name or edited data */
 function applyNames(){
   if(!ED.open||ED.variant==null||ED.variant<0){ if(!ED.open) applyVariant(matchVariant()) }
-  $('#tbTitle').textContent=deviceName(); renderHome(); renderBack(); applyColor();
+  $('#tbTitle').textContent=(L.named||BASE.fixedPlayer)?deviceName():'@@의 iPhone'; if(!BASE.fixedPlayer)D.title='@@의 iPhone'; renderHome(); renderBack(); applyColor();
   if(SYS.locked||SYS.ncMode){ if(SYS.locked) renderLock(); else {const ln=$('.lk-notifs');if(ln)ln.innerHTML=lockNotifs()} }
   refreshApp();
 }
@@ -3130,10 +3134,10 @@ function namePrompt(forcePick){
     w.addEventListener('click',e=>{e.stopPropagation();const b=e.target.closest('[data-who]');if(!b)return;L.player=splitName(b.dataset.who);L.named=1;L.t0=Date.now();L.evF={};saveL();w.remove();repick();applyNames()});
     return;
   }
-  w.innerHTML='<form class="np" autocomplete="off"><div style="display:flex;justify-content:center">'+av(S.kakao.me.avatar,64,true)+'</div><h3>이 iPhone의 주인</h3><p>당신의 이름을 알려 주세요.<br>카톡 친구들이 이 이름으로 불러요.</p><div class="np-row"><label for="np_last">성<input id="np_last" maxlength="4" value=""></label><label for="np_first">이름<input id="np_first" maxlength="10" value=""></label></div><div class="np-prev" id="npPrev"></div><button class="np-go" type="submit">시작하기</button></form>';
+  w.innerHTML='<form class="np" autocomplete="off"><div style="display:flex;justify-content:center">'+av(S.kakao.me.avatar,64,true)+'</div><h3>이 iPhone의 주인</h3><p>입력한 이름은 사이트에 저장되지 않아요.</p><div class="np-row"><label for="np_last">성<input id="np_last" maxlength="4" value=""></label><label for="np_first">이름<input id="np_first" maxlength="10" value=""></label></div><button class="np-go" type="submit">시작하기</button></form>';
   scr().appendChild(w);
-  const f=$('form',w), la=$('#np_last',w), fi=$('#np_first',w), pv=$('#npPrev',w), go=$('.np-go',w);
-  const upd=()=>{const a=la.value.trim(),b=fi.value.trim();go.disabled=!b;pv.textContent=b?('평소엔 "'+b+(hasJong(b)?'아':'야')+'", 가끔은 "'+a+b+'"'):''};
+  const f=$('form',w), la=$('#np_last',w), fi=$('#np_first',w), go=$('.np-go',w);
+  const upd=()=>{go.disabled=!fi.value.trim()};
   la.oninput=fi.oninput=upd; upd();
   ['pointerdown','pointerup','click'].forEach(ev=>w.addEventListener(ev,e=>e.stopPropagation()));
   f.onsubmit=e=>{e.preventDefault();const a=la.value.trim(),b=fi.value.trim();if(!b)return;L.player={last:a,first:b};L.named=1;L.t0=Date.now();L.evF={};saveL();w.remove();repick();applyNames()};
@@ -3327,7 +3331,7 @@ function uiRestoreEditor(u){
 function boot(){
   applyVariant(matchVariant());
   $('#root').innerHTML=deviceHTML();
-  $('#tbTitle').textContent=deviceName(); $('#tbSub').textContent=S.owner.sub||'';
+  $('#tbTitle').textContent=(L.named||BASE.fixedPlayer)?deviceName():'@@의 iPhone'; if(!BASE.fixedPlayer)D.title='@@의 iPhone'; $('#tbSub').textContent=S.owner.sub||'';
   applyColor(); applyDark(); fit(); window.addEventListener('resize',fit);
   $('#fullBtn').onclick=()=>setFull(true); $('#fullExit').onclick=()=>setFull(false);
   renderHome(); showLock(false); renderIsland(); renderSB();
